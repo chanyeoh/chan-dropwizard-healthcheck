@@ -1,4 +1,5 @@
-import com.dropwizard.template.health.IHealthCheck;
+import com.dropwizard.template.health.enums.ToleranceType;
+import com.dropwizard.template.health.model.HealthCheckTolerance;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -15,63 +16,63 @@ public class IHealthCheckTest {
         };
     }
 
-    public static Object[][] validToleranceValues() {
-        return new Object[][] {
-                {0.0, 0.0, 0.0, IHealthCheck.HealthCheckTolerance.ToleranceType.LESS_THAN},
-                {0.0, 0.0, 0.0, IHealthCheck.HealthCheckTolerance.ToleranceType.GREATER_THAN},
-                {30.0, 30.0, 30.0, IHealthCheck.HealthCheckTolerance.ToleranceType.LESS_THAN},
-                {30.0, 30.0, 30.0, IHealthCheck.HealthCheckTolerance.ToleranceType.GREATER_THAN},
-                {10.0, 30.0, 30.0, IHealthCheck.HealthCheckTolerance.ToleranceType.LESS_THAN},
-                {30.0, 30.0, 10.0, IHealthCheck.HealthCheckTolerance.ToleranceType.GREATER_THAN},
-                {10.0, 30.0, 50.0, IHealthCheck.HealthCheckTolerance.ToleranceType.LESS_THAN},
-                {50.0, 30.0, 10.0, IHealthCheck.HealthCheckTolerance.ToleranceType.GREATER_THAN},
-        };
-    }
-
-    public static Object[][] invalidToleranceValues() {
-        return new Object[][] {
-                {10.0, 30.0, 30.0, IHealthCheck.HealthCheckTolerance.ToleranceType.GREATER_THAN},
-                {30.0, 30.0, 10.0, IHealthCheck.HealthCheckTolerance.ToleranceType.LESS_THAN},
-                {10.0, 30.0, 50.0, IHealthCheck.HealthCheckTolerance.ToleranceType.GREATER_THAN},
-                {50.0, 30.0, 10.0, IHealthCheck.HealthCheckTolerance.ToleranceType.LESS_THAN},
-        };
-    }
-
     @ParameterizedTest(name = "{index} => pass={0}, warn={1}, fail={2}")
     @MethodSource("validToleranceDefaultValues")
     public void healthCheckToleranceDefaultTest(Double pass, Double warn, Double fail) {
-        IHealthCheck.HealthCheckTolerance.HealthCheckToleranceBuilder healthCheckToleranceBuilder =
-                IHealthCheck.HealthCheckTolerance.builder();
+        HealthCheckTolerance.HealthCheckToleranceBuilder healthCheckToleranceBuilder =
+                HealthCheckTolerance.builder();
         healthCheckToleranceBuilder.passValue(pass);
         healthCheckToleranceBuilder.warnValue(warn);
         healthCheckToleranceBuilder.failValue(fail);
 
-        IHealthCheck.HealthCheckTolerance healthCheckTolerance = healthCheckToleranceBuilder.build();
-        assertHealthCheckTolerance(pass, warn, fail, healthCheckTolerance);
+        HealthCheckTolerance healthCheckTolerance = healthCheckToleranceBuilder.build();
+        assertHealthCheckTolerance(pass, warn, fail, ToleranceType.LESS_THAN, healthCheckTolerance);
+    }
+
+    public static Object[][] validToleranceValues() {
+        return new Object[][] {
+                {0.0, 0.0, 0.0, ToleranceType.LESS_THAN},
+                {0.0, 0.0, 0.0, ToleranceType.GREATER_THAN},
+                {30.0, 30.0, 30.0, ToleranceType.LESS_THAN},
+                {30.0, 30.0, 30.0, ToleranceType.GREATER_THAN},
+                {10.0, 30.0, 30.0, ToleranceType.LESS_THAN},
+                {30.0, 30.0, 10.0, ToleranceType.GREATER_THAN},
+                {10.0, 30.0, 50.0, ToleranceType.LESS_THAN},
+                {50.0, 30.0, 10.0, ToleranceType.GREATER_THAN},
+        };
     }
 
     @ParameterizedTest(name = "{index} => pass={0}, warn={1}, fail={2}, toleranceType={3}")
     @MethodSource("validToleranceValues")
     public void healthCheckToleranceTest(Double pass, Double warn, Double fail,
-                                         IHealthCheck.HealthCheckTolerance.ToleranceType toleranceType) {
-        IHealthCheck.HealthCheckTolerance.HealthCheckToleranceBuilder healthCheckToleranceBuilder =
-                IHealthCheck.HealthCheckTolerance.builder();
+                                         ToleranceType toleranceType) {
+        HealthCheckTolerance.HealthCheckToleranceBuilder healthCheckToleranceBuilder =
+                HealthCheckTolerance.builder();
         healthCheckToleranceBuilder.passValue(pass);
         healthCheckToleranceBuilder.warnValue(warn);
         healthCheckToleranceBuilder.failValue(fail);
         healthCheckToleranceBuilder.toleranceType(toleranceType);
 
-        IHealthCheck.HealthCheckTolerance healthCheckTolerance = healthCheckToleranceBuilder.build();
-        assertHealthCheckTolerance(pass, warn, fail, healthCheckTolerance);
+        HealthCheckTolerance healthCheckTolerance = healthCheckToleranceBuilder.build();
+        assertHealthCheckTolerance(pass, warn, fail, toleranceType, healthCheckTolerance);
+    }
+
+    public static Object[][] invalidToleranceValues() {
+        return new Object[][] {
+                {10.0, 30.0, 30.0, ToleranceType.GREATER_THAN},
+                {30.0, 30.0, 10.0, ToleranceType.LESS_THAN},
+                {10.0, 30.0, 50.0, ToleranceType.GREATER_THAN},
+                {50.0, 30.0, 10.0, ToleranceType.LESS_THAN},
+        };
     }
 
     @ParameterizedTest(name = "{index} => pass={0}, warn={1}, fail={2}, toleranceType={3}")
     @MethodSource("invalidToleranceValues")
     public void healthCheckInvalidToleranceTest(Double pass, Double warn, Double fail,
-                                         IHealthCheck.HealthCheckTolerance.ToleranceType toleranceType) {
+                                         ToleranceType toleranceType) {
         Exception exception = Assertions.assertThrows(IllegalArgumentException.class , () -> {
-            IHealthCheck.HealthCheckTolerance.HealthCheckToleranceBuilder healthCheckToleranceBuilder =
-                    IHealthCheck.HealthCheckTolerance.builder();
+            HealthCheckTolerance.HealthCheckToleranceBuilder healthCheckToleranceBuilder =
+                    HealthCheckTolerance.builder();
             healthCheckToleranceBuilder.passValue(pass);
             healthCheckToleranceBuilder.warnValue(warn);
             healthCheckToleranceBuilder.failValue(fail);
@@ -87,9 +88,10 @@ public class IHealthCheckTest {
 
 
     private void assertHealthCheckTolerance(Double pass, Double warn, Double fail,
-                                            IHealthCheck.HealthCheckTolerance healthCheckTolerance) {
-        Assertions.assertEquals(healthCheckTolerance.getPassValue(), pass);
-        Assertions.assertEquals(healthCheckTolerance.getWarnValue(), warn);
-        Assertions.assertEquals(healthCheckTolerance.getFailValue(), fail);
+                                            ToleranceType toleranceType, HealthCheckTolerance healthCheckTolerance) {
+        Assertions.assertEquals(pass, healthCheckTolerance.getPassValue());
+        Assertions.assertEquals(warn, healthCheckTolerance.getWarnValue());
+        Assertions.assertEquals(fail, healthCheckTolerance.getFailValue());
+        Assertions.assertEquals(toleranceType, healthCheckTolerance.getToleranceType());
     }
 }

@@ -29,15 +29,6 @@ public class ComponentInfoTest {
         };
     }
 
-    public static String[][] testPointForInvalidComponentInfoBuilder() {
-        return new String[][]{
-                {VALID_COMPONENT_ID, VALID_COMPONENT_NAME + ":" + VALID_COMPONENT_NAME, VALID_COMPONENT_TYPE},
-                {VALID_COMPONENT_ID, VALID_COMPONENT_NAME + ":", VALID_COMPONENT_TYPE},
-                {VALID_COMPONENT_ID, ":" + VALID_COMPONENT_NAME, VALID_COMPONENT_TYPE},
-                {VALID_COMPONENT_ID, ":", VALID_COMPONENT_TYPE},
-        };
-    }
-
     @ParameterizedTest(name = "{index} => componentId={0}, componentName={1}, componentType={2}")
     @MethodSource("testPointForValidComponentInfoBuilder")
     public void validComponentInfoBuilderTest(String componentId, String componentName, String componentType) {
@@ -48,6 +39,15 @@ public class ComponentInfoTest {
 
         ComponentInfo componentInfo = componentInfoBuilder.build();
         assertComponentInfo(componentInfo, componentId, componentName, componentType);
+    }
+
+    public static String[][] testPointForInvalidComponentInfoBuilder() {
+        return new String[][]{
+                {VALID_COMPONENT_ID, VALID_COMPONENT_NAME + ":" + VALID_COMPONENT_NAME, VALID_COMPONENT_TYPE},
+                {VALID_COMPONENT_ID, VALID_COMPONENT_NAME + ":", VALID_COMPONENT_TYPE},
+                {VALID_COMPONENT_ID, ":" + VALID_COMPONENT_NAME, VALID_COMPONENT_TYPE},
+                {VALID_COMPONENT_ID, ":", VALID_COMPONENT_TYPE},
+        };
     }
 
     @ParameterizedTest(name = "{index} => componentId={0}, componentName={1}, componentType={2}")

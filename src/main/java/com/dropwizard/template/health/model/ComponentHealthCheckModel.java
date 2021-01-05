@@ -29,8 +29,8 @@ public class ComponentHealthCheckModel {
     public static class Value {
         private final String componentId;
         private final String componentType;
-        private final Object metricValue; // Could be any Json Object
-        private final String metricUnit; // Could be any Json Object
+        private final Object metricValue; // Could be any metric
+        private final String metricUnit;
         private final String status;
         @JsonFormat(shape=JsonFormat.Shape.STRING, pattern="yyyy-MM-dd'T'HH:mm:ss.SSSZ", timezone="UTC")
         private final Date time;

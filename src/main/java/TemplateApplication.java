@@ -1,4 +1,5 @@
 import com.dropwizard.template.health.MemoryHealthCheck;
+import com.dropwizard.template.health.memory.enums.MemoryType;
 import com.dropwizard.template.health.model.ComponentInfo;
 import com.google.common.collect.ImmutableList;
 import io.dropwizard.Application;
@@ -42,7 +43,7 @@ public class TemplateApplication extends Application<TemplateConfiguration> {
                 .componentId("6fd416e0-8920-410f-9c7b-c479000f7227")
                 .componentType("system")
                 .build();
-        MemoryHealthCheck memoryHealthCheck = new MemoryHealthCheck(componentInfo, MemoryHealthCheck.MemoryType.UTILIZED_MEMORY);
+        MemoryHealthCheck memoryHealthCheck = new MemoryHealthCheck(componentInfo, MemoryType.UTILIZED_MEMORY);
         environment.healthChecks().register(memoryHealthCheck.getMetricTitle(), memoryHealthCheck);
     }
 

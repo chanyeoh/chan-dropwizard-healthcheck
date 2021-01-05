@@ -1,101 +1,50 @@
 package com.dropwizard.template.health;
 
 import com.codahale.metrics.health.HealthCheck;
+import com.dropwizard.template.health.enums.HealthCheckStatusEnum;
+import com.dropwizard.template.health.enums.ToleranceType;
 import com.dropwizard.template.health.model.ComponentHealthCheckModel;
 import com.dropwizard.template.health.model.ComponentInfo;
-import lombok.Builder;
-import lombok.Getter;
+import com.dropwizard.template.health.model.HealthCheckTolerance;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.collect.ImmutableSet;
+
+import java.util.HashMap;
 
 public abstract class IHealthCheck extends HealthCheck {
-    @Getter
-    public enum Status {
-        PASS("pass"),
-        WARN("warn"),
-        FAIL("fail");
-
-        private final String value;
-        Status(String value) {
-            this.value = value;
-        }
-    }
-
-    @Getter
-    @Builder
-    public static class HealthCheckTolerance {
-        public enum ToleranceType {
-            LESS_THAN,
-            GREATER_THAN;
-        }
-
-        private final Double passValue;
-        private final Double warnValue;
-        private final Double failValue;
-        private final ToleranceType toleranceType;
-
-        public static HealthCheckToleranceBuilder builder() {
-            return new HealthCheckToleranceBuilder() {
-                @Override
-                public HealthCheckTolerance build() {
-                    prebuild();
-                    return super.build();
-                }
-            };
-        }
-
-        public static class HealthCheckToleranceBuilder {
-            private ToleranceType toleranceType = ToleranceType.LESS_THAN;
-
-            protected void prebuild() {
-                if (!isValidTolerance()) {
-                    throw new IllegalArgumentException("Invalid Tolerance Values");
-                }
-            }
-
-            private boolean isValidTolerance() {
-                if (toleranceType == ToleranceType.LESS_THAN) {
-                    return isValidToleranceLessThan();
-                }
-                return isValidToleranceLargerThan();
-            }
-
-            private boolean isValidToleranceLessThan() {
-                return passValue <= warnValue &&
-                        warnValue <= failValue;
-            }
-
-            private boolean isValidToleranceLargerThan() {
-                return passValue >= warnValue &&
-                        warnValue >= failValue;
-            }
-        }
-    }
-
-    private ComponentInfo componentInfo;
-
     static final String COLON = ":";
-
-    protected abstract String getVersion();
-    protected abstract String getDescription();
-    protected abstract String getMetricName();
-    protected abstract Double getMetricValue();
-    protected abstract HealthCheckTolerance getStatusTolerance();
+    private final ComponentInfo componentInfo;
 
     public IHealthCheck(ComponentInfo componentInfo) {
         this.componentInfo = componentInfo;
     }
 
-    public String getMetricTitle() {
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(componentInfo.getComponentName());
-        stringBuilder.append(COLON);
-        stringBuilder.append(getMetricName());
+    protected abstract String getVersion();
 
-        return stringBuilder.toString();
+    protected abstract String getDescription();
+
+    protected abstract String getMetricName();
+
+    protected abstract Double getMetricValue();
+
+    protected abstract HealthCheckTolerance getStatusTolerance();
+
+    public String getMetricTitle() {
+        return componentInfo.getComponentName() +
+                COLON +
+                getMetricName();
     }
 
     @Override
     protected Result check() throws Exception {
         return getHealthCheckResult();
+    }
+
+    public Result getHealthCheckResult() throws JsonProcessingException {
+        ComponentHealthCheckModel componentHealthCheckModel = getLatestHealthCheckResults();
+        return convertComponentHealthCheckModelToResult(componentHealthCheckModel);
     }
 
     protected ComponentHealthCheckModel getLatestHealthCheckResults() {
@@ -107,44 +56,68 @@ public abstract class IHealthCheck extends HealthCheck {
                 .build();
     }
 
-    protected Result convertComponentHealthCheckModelToResult(ComponentHealthCheckModel componentHealthCheckModel) {
+    protected Result convertComponentHealthCheckModelToResult(ComponentHealthCheckModel componentHealthCheckModel) throws JsonProcessingException {
+        ResultBuilder resultBuilder = Result.builder();
+        if (isHealthy()) {
+            resultBuilder.healthy();
+        } else {
+            resultBuilder.unhealthy();
+        }
 
+        String jsonString = convertComponentHealthCheckToJsonString(componentHealthCheckModel);
+        updateResultBuilderWithJsonDetail(jsonString, resultBuilder);
+        return resultBuilder.build();
     }
 
     protected boolean isHealthy() {
-        Status status = getStatus();
-        return status == Status.PASS 
+        ImmutableSet<HealthCheckStatusEnum> healthSet = ImmutableSet.of(
+                HealthCheckStatusEnum.PASS,
+                HealthCheckStatusEnum.WARN
+        );
+
+        HealthCheckStatusEnum status = getStatus();
+        return healthSet.contains(status);
     }
 
-    protected Result getHealthCheckResult() {
-        return null;
+    private String convertComponentHealthCheckToJsonString(ComponentHealthCheckModel componentHealthCheckModel) throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        return objectMapper.writeValueAsString(componentHealthCheckModel);
     }
 
-    protected Status getStatus() {
+    private void updateResultBuilderWithJsonDetail(String jsonString, ResultBuilder resultBuilder) throws JsonProcessingException {
+        HashMap<String, Object> reader = new ObjectMapper().readValue(jsonString, HashMap.class);
+        for (String key : reader.keySet()) {
+            Object value = reader.get(key);
+            resultBuilder.withDetail(key, value);
+        }
+    }
+
+    protected HealthCheckStatusEnum getStatus() {
         HealthCheckTolerance healthCheckTolerance = getStatusTolerance();
-        if (healthCheckTolerance.getToleranceType() == HealthCheckTolerance.ToleranceType.LESS_THAN) {
+        if (healthCheckTolerance.getToleranceType() == ToleranceType.LESS_THAN) {
             return getLessThanToleranceStatus(healthCheckTolerance);
         }
         return getLargerThanToleranceStatus(healthCheckTolerance);
     }
 
-    private Status getLessThanToleranceStatus(HealthCheckTolerance healthCheckTolerance) {
+    private HealthCheckStatusEnum getLessThanToleranceStatus(HealthCheckTolerance healthCheckTolerance) {
         if (getMetricValue() <= healthCheckTolerance.getPassValue()) {
-            return Status.PASS;
+            return HealthCheckStatusEnum.PASS;
         }
         if (getMetricValue() <= healthCheckTolerance.getPassValue()) {
-            return Status.WARN;
+            return HealthCheckStatusEnum.WARN;
         }
-        return Status.FAIL;
+        return HealthCheckStatusEnum.FAIL;
     }
 
-    private Status getLargerThanToleranceStatus(HealthCheckTolerance healthCheckTolerance) {
+    private HealthCheckStatusEnum getLargerThanToleranceStatus(HealthCheckTolerance healthCheckTolerance) {
         if (getMetricValue() >= healthCheckTolerance.getPassValue()) {
-            return Status.PASS;
+            return HealthCheckStatusEnum.PASS;
         }
         if (getMetricValue() >= healthCheckTolerance.getPassValue()) {
-            return Status.WARN;
+            return HealthCheckStatusEnum.WARN;
         }
-        return Status.FAIL;
+        return HealthCheckStatusEnum.FAIL;
     }
 }
