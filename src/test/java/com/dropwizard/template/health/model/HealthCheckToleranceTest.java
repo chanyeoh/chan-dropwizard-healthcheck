@@ -1,11 +1,14 @@
+package com.dropwizard.template.health.model;
+
 import com.dropwizard.template.health.enums.ToleranceType;
-import com.dropwizard.template.health.model.HealthCheckTolerance;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public class IHealthCheckTest {
+import static com.dropwizard.template.health.MemoryHealthCheckUtil.assertHealthCheckTolerance;
+
+public class HealthCheckToleranceTest {
     static final String INVALID_TOLERANCE_VALUE_ERROR_MESSAGE = "Invalid Tolerance Values";
     public static Object[][] validToleranceDefaultValues() {
         return new Object[][] {
@@ -83,15 +86,5 @@ public class IHealthCheckTest {
 
         String actualMessage = exception.getMessage();
         Assertions.assertTrue(StringUtils.containsIgnoreCase(actualMessage, INVALID_TOLERANCE_VALUE_ERROR_MESSAGE));
-    }
-
-
-
-    private void assertHealthCheckTolerance(Double pass, Double warn, Double fail,
-                                            ToleranceType toleranceType, HealthCheckTolerance healthCheckTolerance) {
-        Assertions.assertEquals(pass, healthCheckTolerance.getPassValue());
-        Assertions.assertEquals(warn, healthCheckTolerance.getWarnValue());
-        Assertions.assertEquals(fail, healthCheckTolerance.getFailValue());
-        Assertions.assertEquals(toleranceType, healthCheckTolerance.getToleranceType());
     }
 }

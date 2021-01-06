@@ -1,6 +1,12 @@
-import com.dropwizard.template.health.MemoryHealthCheck;
+import com.dropwizard.template.health.ChanDropWizardHealthCheck;
+import com.dropwizard.template.health.IHealthCheckInfo;
+import com.dropwizard.template.health.enums.ToleranceType;
+import com.dropwizard.template.health.memory.MemoryHealthCheck;
+import com.dropwizard.template.health.memory.RuntimeMemoryHealthCheck;
+import com.dropwizard.template.health.memory.enums.MemoryMetric;
 import com.dropwizard.template.health.memory.enums.MemoryType;
 import com.dropwizard.template.health.model.ComponentInfo;
+import com.dropwizard.template.health.model.HealthCheckTolerance;
 import com.google.common.collect.ImmutableList;
 import io.dropwizard.Application;
 import io.dropwizard.configuration.ResourceConfigurationSourceProvider;
@@ -43,8 +49,21 @@ public class TemplateApplication extends Application<TemplateConfiguration> {
                 .componentId("6fd416e0-8920-410f-9c7b-c479000f7227")
                 .componentType("system")
                 .build();
-        MemoryHealthCheck memoryHealthCheck = new MemoryHealthCheck(componentInfo, MemoryType.UTILIZED_MEMORY);
-        environment.healthChecks().register(memoryHealthCheck.getMetricTitle(), memoryHealthCheck);
+        MemoryHealthCheck memoryHealthCheck = new MemoryHealthCheck(MemoryType.UTILIZED_MEMORY,
+                MemoryMetric.BYTES, new RuntimeMemoryHealthCheck(),
+                HealthCheckTolerance.builder()
+                        .passValue(100.0)
+                        .warnValue(50.0)
+                        .failValue(0.0)
+                        .toleranceType(ToleranceType.GREATER_THAN)
+                        .build());
+        addChanDropWizardHealthCheckToEnvironment(componentInfo, memoryHealthCheck, environment);
+    }
+
+    private void addChanDropWizardHealthCheckToEnvironment(ComponentInfo componentInfo, IHealthCheckInfo healthCheckInfo,
+                                                           Environment environment) {
+        ChanDropWizardHealthCheck chanDropWizardHealthCheck = new ChanDropWizardHealthCheck(componentInfo, healthCheckInfo);
+        environment.healthChecks().register(chanDropWizardHealthCheck.getMetricTitle(), chanDropWizardHealthCheck);
     }
 
     @Override
