@@ -1,6 +1,7 @@
 package com.dropwizard.template.health.model;
 
 
+import com.dropwizard.template.health.enums.HealthCheckStatusEnum;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
@@ -18,7 +19,7 @@ import java.util.List;
 public class ComponentHealthCheckModel {
     private final String componentName;
     private final String metricName;
-    private final String status;
+    private final HealthCheckStatusEnum status;
     private final String version;
     private final String description;
     private final List<Value> componentValue;
@@ -31,7 +32,7 @@ public class ComponentHealthCheckModel {
         private final String componentType;
         private final Object metricValue; // Could be any metric
         private final String metricUnit;
-        private final String status;
+        private final HealthCheckStatusEnum status;
         @JsonFormat(shape=JsonFormat.Shape.STRING, pattern="yyyy-MM-dd'T'HH:mm:ss.SSSZ", timezone="UTC")
         private final Date time;
         private final String output; // Can be used to show error messages

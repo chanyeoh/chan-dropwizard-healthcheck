@@ -40,22 +40,24 @@ public class MemoryHealthCheck implements IHealthCheckInfo {
 
     @Override
     public String getMetricName() {
+        if (memoryMetric == MemoryMetric.PERCENTAGE_BYTES) {
+            return "";
+        }
         return memoryType.getValue();
     }
 
     @Override
-    public Double getMetricValue() {
-        switch (memoryType) {
-            case FREE_MEMORY:
-                return getFreeMemoryValue();
-            case UTILIZED_MEMORY:
-                return getUtilizedMemoryValue();
-            case TOTAL_MEMORY:
-                return getTotalMemoryValue();
-            default:
-                throw new RuntimeException("Invalid Enum Value");
-        }
+    public HealthCheckTolerance getStatusTolerance() {
+        return healthCheckTolerance;
     }
+
+    @Override
+    public List<ComponentHealthCheckModel.Value> getComponentValues() {
+        this.memoryHealthCheck.getMemoryHealthCheck();
+
+        return null;
+    }
+
 
     private Double getFreeMemoryValue() {
         MemoryHealthCheckModel memoryHealthCheckModel = memoryHealthCheck.getMemoryHealthCheck();
@@ -86,13 +88,52 @@ public class MemoryHealthCheck implements IHealthCheckInfo {
         return 100.0;
     }
 
-    @Override
-    public HealthCheckTolerance getStatusTolerance() {
-        return healthCheckTolerance;
-    }
+//    private void updateComponentMetric() {
+//        MemoryHealthCheckModel memoryHealthCheckModel = getMemoryHealthCheck();
+//
+//        ComponentHealthCheckModel.Value memoryInfo = ComponentHealthCheckModel.Value.builder()
+//                .componentId(componentInfo.getComponentId())
+//                .componentType(componentInfo.getComponentType())
+//                .metricValue(memoryHealthCheckModel.getUtilizedMemory())
+//                .metricUnit("bytes")
+//                .status("pass")
+//                .time(new Date())
+//                .output("") // Print if there are any errors
+//                .build();
+//        List<ComponentHealthCheckModel.Value> healthCheckValue = ImmutableList.of(
+//                memoryInfo
+//        );
+//
+//        componentHealthCheckModel = componentHealthCheckModel.toBuilder()
+//                .componentValue(healthCheckValue)
+//                .build();
+//    }
 
-    @Override
-    public List<ComponentHealthCheckModel.Value> getComponentValues() {
-        return null;
-    }
+//    private HealthCheckStatusEnum getStatus() {
+//        HealthCheckTolerance healthCheckTolerance = healthCheckInfo.getStatusTolerance();
+//        if (healthCheckTolerance.getToleranceType() == ToleranceType.LESS_THAN) {
+//            return getLessThanToleranceStatus(healthCheckTolerance);
+//        }
+//        return getLargerThanToleranceStatus(healthCheckTolerance);
+//    }
+//
+//    private HealthCheckStatusEnum getLessThanToleranceStatus(HealthCheckTolerance healthCheckTolerance) {
+//        if (healthCheckInfo.getMetricValue() <= healthCheckTolerance.getPassValue()) {
+//            return HealthCheckStatusEnum.PASS;
+//        }
+//        if (healthCheckInfo.getMetricValue() <= healthCheckTolerance.getWarnValue()) {
+//            return HealthCheckStatusEnum.WARN;
+//        }
+//        return HealthCheckStatusEnum.FAIL;
+//    }
+//
+//    private HealthCheckStatusEnum getLargerThanToleranceStatus(HealthCheckTolerance healthCheckTolerance) {
+//        if (healthCheckInfo.getMetricValue() >= healthCheckTolerance.getPassValue()) {
+//            return HealthCheckStatusEnum.PASS;
+//        }
+//        if (healthCheckInfo.getMetricValue() >= healthCheckTolerance.getWarnValue()) {
+//            return HealthCheckStatusEnum.WARN;
+//        }
+//        return HealthCheckStatusEnum.FAIL;
+//    }
 }

@@ -2,16 +2,18 @@ package com.dropwizard.template.health;
 
 import com.codahale.metrics.health.HealthCheck;
 import com.dropwizard.template.health.enums.HealthCheckStatusEnum;
-import com.dropwizard.template.health.enums.ToleranceType;
 import com.dropwizard.template.health.model.ComponentHealthCheckModel;
 import com.dropwizard.template.health.model.ComponentInfo;
-import com.dropwizard.template.health.model.HealthCheckTolerance;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.collect.ImmutableSet;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
+import java.util.List;
 
 public class ChanDropWizardHealthCheck extends HealthCheck {
     static final String COLON = ":";
@@ -25,9 +27,14 @@ public class ChanDropWizardHealthCheck extends HealthCheck {
     }
 
     public String getMetricTitle() {
+        String metricName = healthCheckInfo.getMetricName();
+        if (StringUtils.isEmpty(metricName)) {
+            return componentInfo.getComponentName();
+        }
+
         return componentInfo.getComponentName() +
                 COLON +
-                healthCheckInfo.getMetricName();
+                metricName;
     }
 
     public Result getHealthCheckResult() throws JsonProcessingException {
@@ -41,13 +48,16 @@ public class ChanDropWizardHealthCheck extends HealthCheck {
     }
 
     private ComponentHealthCheckModel getLatestHealthCheckResults() {
+        List<ComponentHealthCheckModel.Value> componentValues =
+                healthCheckInfo.getComponentValues();
+
         return ComponentHealthCheckModel.builder()
                 .componentName(componentInfo.getComponentName())
                 .metricName(healthCheckInfo.getMetricName())
                 .version(healthCheckInfo.getVersion())
-                .status(getStatus().getValue())
+                .status(getStatus(componentValues))
                 .description(healthCheckInfo.getDescription())
-                .componentValue(healthCheckInfo.getComponentValues())
+                .componentValue(componentValues)
                 .build();
     }
 
@@ -65,18 +75,19 @@ public class ChanDropWizardHealthCheck extends HealthCheck {
     }
 
     private boolean isHealthy(ComponentHealthCheckModel componentHealthCheckModel) {
-        ImmutableSet<String> healthSet = ImmutableSet.of(
-                HealthCheckStatusEnum.PASS.getValue(),
-                HealthCheckStatusEnum.WARN.getValue()
+        ImmutableSet<HealthCheckStatusEnum> healthSet = ImmutableSet.of(
+                HealthCheckStatusEnum.PASS,
+                HealthCheckStatusEnum.WARN
         );
 
-        String status = componentHealthCheckModel.getStatus();
+        HealthCheckStatusEnum status = componentHealthCheckModel.getStatus();
         return healthSet.contains(status);
     }
 
     private String convertComponentHealthCheckToJsonString(ComponentHealthCheckModel componentHealthCheckModel) throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
         return objectMapper.writeValueAsString(componentHealthCheckModel);
     }
 
@@ -88,53 +99,17 @@ public class ChanDropWizardHealthCheck extends HealthCheck {
         }
     }
 
-    private HealthCheckStatusEnum getStatus() {
-        HealthCheckTolerance healthCheckTolerance = healthCheckInfo.getStatusTolerance();
-        if (healthCheckTolerance.getToleranceType() == ToleranceType.LESS_THAN) {
-            return getLessThanToleranceStatus(healthCheckTolerance);
+    private HealthCheckStatusEnum getStatus(List<ComponentHealthCheckModel.Value> componentValues) {
+        HealthCheckStatusEnum status = HealthCheckStatusEnum.PASS;
+        for (ComponentHealthCheckModel.Value value : componentValues) {
+            if (value.getStatus() == HealthCheckStatusEnum.FAIL) {
+                return HealthCheckStatusEnum.FAIL;
+            }
+
+            if (value.getStatus() == HealthCheckStatusEnum.WARN) {
+                status = HealthCheckStatusEnum.WARN;
+            }
         }
-        return getLargerThanToleranceStatus(healthCheckTolerance);
+        return status;
     }
-
-    private HealthCheckStatusEnum getLessThanToleranceStatus(HealthCheckTolerance healthCheckTolerance) {
-        if (healthCheckInfo.getMetricValue() <= healthCheckTolerance.getPassValue()) {
-            return HealthCheckStatusEnum.PASS;
-        }
-        if (healthCheckInfo.getMetricValue() <= healthCheckTolerance.getWarnValue()) {
-            return HealthCheckStatusEnum.WARN;
-        }
-        return HealthCheckStatusEnum.FAIL;
-    }
-
-    private HealthCheckStatusEnum getLargerThanToleranceStatus(HealthCheckTolerance healthCheckTolerance) {
-        if (healthCheckInfo.getMetricValue() >= healthCheckTolerance.getPassValue()) {
-            return HealthCheckStatusEnum.PASS;
-        }
-        if (healthCheckInfo.getMetricValue() >= healthCheckTolerance.getWarnValue()) {
-            return HealthCheckStatusEnum.WARN;
-        }
-        return HealthCheckStatusEnum.FAIL;
-    }
-
-
-//    private void updateComponentMetric() {
-//        MemoryHealthCheckModel memoryHealthCheckModel = getMemoryHealthCheck();
-//
-//        ComponentHealthCheckModel.Value memoryInfo = ComponentHealthCheckModel.Value.builder()
-//                .componentId(componentInfo.getComponentId())
-//                .componentType(componentInfo.getComponentType())
-//                .metricValue(memoryHealthCheckModel.getUtilizedMemory())
-//                .metricUnit("bytes")
-//                .status("pass")
-//                .time(new Date())
-//                .output("") // Print if there are any errors
-//                .build();
-//        List<ComponentHealthCheckModel.Value> healthCheckValue = ImmutableList.of(
-//                memoryInfo
-//        );
-//
-//        componentHealthCheckModel = componentHealthCheckModel.toBuilder()
-//                .componentValue(healthCheckValue)
-//                .build();
-//    }
 }
