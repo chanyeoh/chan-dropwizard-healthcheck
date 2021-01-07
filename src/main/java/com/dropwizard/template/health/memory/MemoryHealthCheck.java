@@ -8,6 +8,7 @@ import com.dropwizard.template.health.memory.enums.MemoryMetric;
 import com.dropwizard.template.health.memory.enums.MemoryType;
 import com.dropwizard.template.health.memory.model.MemoryHealthCheckModel;
 import com.dropwizard.template.health.model.ComponentHealthCheckModel;
+import com.dropwizard.template.health.model.ComponentInfo;
 import com.dropwizard.template.health.model.HealthCheckTolerance;
 import com.google.common.collect.ImmutableList;
 
@@ -16,21 +17,24 @@ import java.util.Date;
 import java.util.List;
 
 public class MemoryHealthCheck implements IHealthCheckInfo {
-    private List<MemoryType> memoryTypeList;
-    private MemoryMetric memoryMetric;
-    private IMemoryHealthCheck memoryHealthCheck;
-    private HealthCheckTolerance healthCheckTolerance;
+    private final List<MemoryType> memoryTypeList;
+    private final MemoryMetric memoryMetric;
+    private final ComponentInfo componentInfo;
+    private final IMemoryHealthCheck memoryHealthCheck;
+    private final HealthCheckTolerance healthCheckTolerance;
 
     static final String VERSION = "1.0";
     static final String DESCRIPTION = "This is a metric that is used to track memory";
 
     public MemoryHealthCheck(List<MemoryType> memoryTypeList,
                              MemoryMetric memoryMetric,
+                             ComponentInfo componentInfo,
                              IMemoryHealthCheck memoryHealthCheck,
                              HealthCheckTolerance healthCheckTolerance) {
         assertValidMemoryTypeList();
         this.memoryTypeList = memoryTypeList;
         this.memoryMetric = memoryMetric;
+        this.componentInfo = componentInfo;
         this.memoryHealthCheck = memoryHealthCheck;
         this.healthCheckTolerance = healthCheckTolerance;
     }
@@ -91,8 +95,8 @@ public class MemoryHealthCheck implements IHealthCheckInfo {
                                                                       MemoryMetric memoryMetric) {
         String message = memoryHealthCheck.getLastErrorMessage().getMessage();
         return ComponentHealthCheckModel.Value.builder()
-//                .componentId(componentInfo.getComponentId())
-//                .componentType(componentInfo.getComponentType())
+                .componentId(componentInfo.getComponentId())
+                .componentType(componentInfo.getComponentType())
                 .metricValue(memoryValue)
                 .metricUnit(memoryMetric.getValue())
                 .status(getStatus(memoryValue))
