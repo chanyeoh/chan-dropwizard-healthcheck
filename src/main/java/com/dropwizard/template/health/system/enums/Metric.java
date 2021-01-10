@@ -1,16 +1,16 @@
-package com.dropwizard.template.health.memory.enums;
+package com.dropwizard.template.health.system.enums;
 
 import lombok.Getter;
 
 @Getter
-public enum MemoryMetric {
+public enum Metric {
     PERCENTAGE("percentage"),
     BYTES("bytes"),
     PERCENTAGE_BYTES("");
 
     private final String value;
 
-    MemoryMetric(String value) {
+    Metric(String value) {
         this.value = value;
     }
 }

@@ -1,7 +1,7 @@
 package com.dropwizard.template.health.model;
 
 import com.dropwizard.template.health.MemoryHealthCheckUtil;
-import com.dropwizard.template.health.memory.model.MemoryHealthCheckModel;
+import com.dropwizard.template.health.system.model.MemoryHealthCheckModel;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;

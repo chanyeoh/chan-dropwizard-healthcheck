@@ -1,10 +1,11 @@
 import com.dropwizard.template.health.ChanDropWizardHealthCheck;
 import com.dropwizard.template.health.IHealthCheckInfo;
 import com.dropwizard.template.health.enums.ToleranceType;
-import com.dropwizard.template.health.memory.MemoryHealthCheck;
-import com.dropwizard.template.health.memory.RuntimeMemoryHealthCheck;
-import com.dropwizard.template.health.memory.enums.MemoryMetric;
-import com.dropwizard.template.health.memory.enums.MemoryType;
+import com.dropwizard.template.health.system.memory.MemoryHealthCheck;
+import com.dropwizard.template.health.system.MetricTolerance;
+import com.dropwizard.template.health.system.memory.RuntimeMemoryHealthCheck;
+import com.dropwizard.template.health.system.enums.Metric;
+import com.dropwizard.template.health.system.enums.MemoryType;
 import com.dropwizard.template.health.model.ComponentInfo;
 import com.dropwizard.template.health.model.HealthCheckTolerance;
 import com.google.common.collect.ImmutableList;
@@ -12,6 +13,8 @@ import io.dropwizard.Application;
 import io.dropwizard.configuration.ResourceConfigurationSourceProvider;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+
+import java.util.List;
 
 // https://www.baeldung.com/java-dropwizard
 // https://www.dropwizard.io/en/latest/manual/core.html
@@ -49,14 +52,30 @@ public class TemplateApplication extends Application<TemplateConfiguration> {
                 .componentId("6fd416e0-8920-410f-9c7b-c479000f7227")
                 .componentType("system")
                 .build();
-        MemoryHealthCheck memoryHealthCheck = new MemoryHealthCheck(MemoryType.UTILIZED_MEMORY,
-                MemoryMetric.BYTES, new RuntimeMemoryHealthCheck(),
-                HealthCheckTolerance.builder()
-                        .passValue(100.0)
-                        .warnValue(50.0)
-                        .failValue(0.0)
-                        .toleranceType(ToleranceType.GREATER_THAN)
-                        .build());
+        List<MemoryType> memoryTypeList = ImmutableList.of(
+                MemoryType.UTILIZED_MEMORY
+        );
+
+        RuntimeMemoryHealthCheck runtimeMemoryHealthCheck = new RuntimeMemoryHealthCheck();
+        HealthCheckTolerance.builder()
+                .passValue(100.0)
+                .warnValue(50.0)
+                .failValue(0.0)
+                .toleranceType(ToleranceType.GREATER_THAN)
+                .build();
+
+        MemoryHealthCheck memoryHealthCheck = new MemoryHealthCheck(memoryTypeList,
+                new MetricTolerance() {
+                    @Override
+                    public List<Metric> getMeasureableMetric() {
+                        return null;
+                    }
+
+                    @Override
+                    public HealthCheckTolerance getMetricTolerance(Metric metric) {
+                        return null;
+                    }
+                }, componentInfo, runtimeMemoryHealthCheck);
         addChanDropWizardHealthCheckToEnvironment(componentInfo, memoryHealthCheck, environment);
     }
 

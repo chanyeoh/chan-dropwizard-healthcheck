@@ -1,4 +1,4 @@
-package com.dropwizard.template.health.memory.enums;
+package com.dropwizard.template.health.system.enums;
 
 import lombok.Getter;
 

@@ -1,4 +1,4 @@
-package com.dropwizard.template.health.memory.model;
+package com.dropwizard.template.health.system.model;
 
 import lombok.Builder;
 import lombok.Getter;

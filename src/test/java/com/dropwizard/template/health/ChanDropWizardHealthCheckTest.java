@@ -125,7 +125,6 @@ public class ChanDropWizardHealthCheckTest {
         when(healthCheckInfoMock.getVersion()).thenReturn(TEST_VERSION);
         when(healthCheckInfoMock.getMetricName()).thenReturn(isMetricEmpty ? "" : TEST_METRIC);
         when(healthCheckInfoMock.getDescription()).thenReturn(TEST_DESCRIPTION);
-        when(healthCheckInfoMock.getStatusTolerance()).thenReturn(buildHealthCheckTolerance());
         when(healthCheckInfoMock.getComponentValues()).thenReturn(componentValues);
 
         return healthCheckInfoMock;

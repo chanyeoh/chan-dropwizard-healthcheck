@@ -1,7 +1,7 @@
 package com.dropwizard.template.health;
 
 import com.dropwizard.template.health.enums.ToleranceType;
-import com.dropwizard.template.health.memory.model.MemoryHealthCheckModel;
+import com.dropwizard.template.health.system.model.MemoryHealthCheckModel;
 import com.dropwizard.template.health.model.HealthCheckTolerance;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.function.Executable;

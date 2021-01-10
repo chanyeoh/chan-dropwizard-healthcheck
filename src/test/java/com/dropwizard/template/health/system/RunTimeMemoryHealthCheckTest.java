@@ -1,7 +1,8 @@
-package com.dropwizard.template.health.memory;
+package com.dropwizard.template.health.system;
 
 import com.dropwizard.template.health.MemoryHealthCheckUtil;
-import com.dropwizard.template.health.memory.model.MemoryHealthCheckModel;
+import com.dropwizard.template.health.system.memory.RuntimeMemoryHealthCheck;
+import com.dropwizard.template.health.system.model.MemoryHealthCheckModel;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;

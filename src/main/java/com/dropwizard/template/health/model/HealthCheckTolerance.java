@@ -1,5 +1,6 @@
 package com.dropwizard.template.health.model;
 
+import com.dropwizard.template.health.enums.HealthCheckStatusEnum;
 import com.dropwizard.template.health.enums.ToleranceType;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,6 +21,33 @@ public class HealthCheckTolerance {
                 return super.build();
             }
         };
+    }
+
+    public HealthCheckStatusEnum getHealthCheckStatus(Double value) {
+        if (getToleranceType() == ToleranceType.LESS_THAN) {
+            return getLessThanToleranceStatus(value);
+        }
+        return getLargerThanToleranceStatus(value);
+    }
+
+    private HealthCheckStatusEnum getLessThanToleranceStatus(Double value) {
+        if (value <= getPassValue()) {
+            return HealthCheckStatusEnum.PASS;
+        }
+        if (value <= getWarnValue()) {
+            return HealthCheckStatusEnum.WARN;
+        }
+        return HealthCheckStatusEnum.FAIL;
+    }
+
+    private HealthCheckStatusEnum getLargerThanToleranceStatus(Double value) {
+        if (value >= getPassValue()) {
+            return HealthCheckStatusEnum.PASS;
+        }
+        if (value >= getWarnValue()) {
+            return HealthCheckStatusEnum.WARN;
+        }
+        return HealthCheckStatusEnum.FAIL;
     }
 
     public static class HealthCheckToleranceBuilder {

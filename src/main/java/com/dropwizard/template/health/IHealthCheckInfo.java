@@ -10,7 +10,6 @@ public interface IHealthCheckInfo {
     String getVersion();
     String getDescription();
     String getMetricName();
-    HealthCheckTolerance getStatusTolerance();
 
     List<ComponentHealthCheckModel.Value> getComponentValues();
 }
