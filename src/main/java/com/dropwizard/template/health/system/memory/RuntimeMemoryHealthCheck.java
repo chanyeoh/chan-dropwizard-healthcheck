@@ -31,7 +31,10 @@ public class RuntimeMemoryHealthCheck implements IMemoryHealthCheck {
     }
 
     @Override
-    public Exception getLastErrorMessage() {
-        return this.exceptionMessage;
+    public String getLastErrorMessage() {
+        if (this.exceptionMessage == null) {
+            return "";
+        }
+        return this.exceptionMessage.getMessage();
     }
 }

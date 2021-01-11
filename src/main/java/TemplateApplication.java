@@ -1,8 +1,10 @@
 import com.dropwizard.template.health.ChanDropWizardHealthCheck;
 import com.dropwizard.template.health.IHealthCheckInfo;
+import com.dropwizard.template.health.enums.HealthCheckStatusEnum;
 import com.dropwizard.template.health.enums.ToleranceType;
 import com.dropwizard.template.health.system.memory.MemoryHealthCheck;
 import com.dropwizard.template.health.system.MetricTolerance;
+import com.dropwizard.template.health.system.memory.MemoryMetricTolerance;
 import com.dropwizard.template.health.system.memory.RuntimeMemoryHealthCheck;
 import com.dropwizard.template.health.system.enums.Metric;
 import com.dropwizard.template.health.system.enums.MemoryType;
@@ -57,25 +59,18 @@ public class TemplateApplication extends Application<TemplateConfiguration> {
         );
 
         RuntimeMemoryHealthCheck runtimeMemoryHealthCheck = new RuntimeMemoryHealthCheck();
-        HealthCheckTolerance.builder()
-                .passValue(100.0)
-                .warnValue(50.0)
-                .failValue(0.0)
-                .toleranceType(ToleranceType.GREATER_THAN)
+        HealthCheckTolerance healthCheckTolerance = HealthCheckTolerance.builder()
+                .passValue(50.0)
+                .warnValue(80.0)
+                .failValue(100.0)
+                .toleranceType(ToleranceType.LESS_THAN)
                 .build();
+        List<MetricTolerance> metricToleranceList = ImmutableList.of(
+                new MemoryMetricTolerance(Metric.PERCENTAGE, healthCheckTolerance)
+        );
 
-        MemoryHealthCheck memoryHealthCheck = new MemoryHealthCheck(memoryTypeList,
-                new MetricTolerance() {
-                    @Override
-                    public List<Metric> getMeasureableMetric() {
-                        return null;
-                    }
-
-                    @Override
-                    public HealthCheckTolerance getMetricTolerance(Metric metric) {
-                        return null;
-                    }
-                }, componentInfo, runtimeMemoryHealthCheck);
+        MemoryHealthCheck memoryHealthCheck = new MemoryHealthCheck(memoryTypeList, metricToleranceList,
+                componentInfo, runtimeMemoryHealthCheck);
         addChanDropWizardHealthCheckToEnvironment(componentInfo, memoryHealthCheck, environment);
     }
 

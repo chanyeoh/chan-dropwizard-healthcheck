@@ -1,4 +1,4 @@
-package com.dropwizard.template.health.system;
+package com.dropwizard.template.health.system.enums;
 
 import com.dropwizard.template.health.system.enums.MemoryType;
 import org.junit.jupiter.api.Assertions;

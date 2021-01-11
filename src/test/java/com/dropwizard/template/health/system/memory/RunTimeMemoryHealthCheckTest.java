@@ -1,4 +1,4 @@
-package com.dropwizard.template.health.system;
+package com.dropwizard.template.health.system.memory;
 
 import com.dropwizard.template.health.MemoryHealthCheckUtil;
 import com.dropwizard.template.health.system.memory.RuntimeMemoryHealthCheck;

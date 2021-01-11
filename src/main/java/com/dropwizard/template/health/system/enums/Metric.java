@@ -5,8 +5,7 @@ import lombok.Getter;
 @Getter
 public enum Metric {
     PERCENTAGE("percentage"),
-    BYTES("bytes"),
-    PERCENTAGE_BYTES("");
+    BYTES("bytes");
 
     private final String value;
 

@@ -8,7 +8,6 @@ import com.dropwizard.template.health.system.enums.MemoryType;
 import com.dropwizard.template.health.system.model.MemoryHealthCheckModel;
 import com.dropwizard.template.health.model.ComponentHealthCheckModel;
 import com.dropwizard.template.health.model.ComponentInfo;
-import com.dropwizard.template.health.model.HealthCheckTolerance;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -16,7 +15,7 @@ import java.util.List;
 
 public class MemoryHealthCheck implements IHealthCheckInfo {
     private final List<MemoryType> memoryTypeList;
-    private final MetricTolerance metricTolerance;
+    private final List<MetricTolerance> metricToleranceList;
     private final ComponentInfo componentInfo;
     private final IMemoryHealthCheck memoryHealthCheck;
 
@@ -24,12 +23,12 @@ public class MemoryHealthCheck implements IHealthCheckInfo {
     static final String DESCRIPTION = "This is a metric that is used to track memory";
 
     public MemoryHealthCheck(List<MemoryType> memoryTypeList,
-                             MetricTolerance metricTolerance,
+                             List<MetricTolerance> metricToleranceList,
                              ComponentInfo componentInfo,
                              IMemoryHealthCheck memoryHealthCheck) {
         assertValidMemoryTypeList(memoryTypeList);
         this.memoryTypeList = memoryTypeList;
-        this.metricTolerance = metricTolerance;
+        this.metricToleranceList = metricToleranceList;
         this.componentInfo = componentInfo;
         this.memoryHealthCheck = memoryHealthCheck;
     }
@@ -61,16 +60,15 @@ public class MemoryHealthCheck implements IHealthCheckInfo {
 
     @Override
     public List<ComponentHealthCheckModel.Value> getComponentValues() {
-        List<Metric> metricList = metricTolerance.getMeasureableMetric();
-        MemoryHealthCheckModel memoryHealthCheckModel = this.memoryHealthCheck.getMemoryHealthCheck();
-
         List<ComponentHealthCheckModel.Value> componentValueList = new ArrayList<>();
+        MemoryHealthCheckModel memoryHealthCheckModel = memoryHealthCheck.getMemoryHealthCheck();
+
         for (MemoryType memoryType : memoryTypeList) {
-            for (Metric metric : metricList) {
-                Double memoryValue = getMemoryValue(memoryType, metric,
+            for (MetricTolerance metricTolerance : metricToleranceList) {
+                Double memoryValue = getMemoryValue(memoryType, metricTolerance,
                         memoryHealthCheckModel);
                 ComponentHealthCheckModel.Value componentValue =
-                        buildComponentHealthValue(memoryValue, metric);
+                        buildComponentHealthValue(memoryValue, metricTolerance);
                 componentValueList.add(componentValue);
             }
         }
@@ -78,85 +76,63 @@ public class MemoryHealthCheck implements IHealthCheckInfo {
         return componentValueList;
     }
 
-    private ComponentHealthCheckModel.Value buildComponentHealthValue(Double memoryValue,
-                                                                      Metric metric) {
-        String message = memoryHealthCheck.getLastErrorMessage().getMessage();
-        return ComponentHealthCheckModel.Value.builder()
-                .componentId(componentInfo.getComponentId())
-                .componentType(componentInfo.getComponentType())
-                .metricValue(memoryValue)
-                .metricUnit(metric.getValue())
-                .status(getStatus(metric, memoryValue))
-                .time(new Date())
-                .output(message) // Print if there are any errors
-                .build();
-    }
-
     private Double getMemoryValue(MemoryType memoryType,
-                                  Metric metric,
+                                  MetricTolerance metricTolerance,
                                   MemoryHealthCheckModel memoryHealthCheckModel) {
         switch (memoryType) {
             case FREE_MEMORY:
-                return getFreeMemoryValue(metric,
-                        memoryHealthCheckModel);
+                return getFreeMemoryValue(metricTolerance, memoryHealthCheckModel);
             case UTILIZED_MEMORY:
-                return getUtilizedMemoryValue(metric,
-                        memoryHealthCheckModel);
+                return getUtilizedMemoryValue(metricTolerance, memoryHealthCheckModel);
             case TOTAL_MEMORY:
-                return getTotalMemoryValue(metric,
-                        memoryHealthCheckModel);
+                return getTotalMemoryValue(metricTolerance, memoryHealthCheckModel);
             default:
                 throw new IllegalArgumentException("Invalid Memory Type");
         }
     }
 
-    private Double getFreeMemoryValue(Metric metric,
+
+    private ComponentHealthCheckModel.Value buildComponentHealthValue(Double memoryValue,
+                                                                      MetricTolerance metricTolerance) {
+        Metric metric = metricTolerance.getMetric();
+        HealthCheckStatusEnum healthCheckStatus= metricTolerance.getMetricHealthCheck(memoryValue);
+        String message = memoryHealthCheck.getLastErrorMessage();
+
+        return ComponentHealthCheckModel.Value.builder()
+                .componentId(componentInfo.getComponentId())
+                .componentType(componentInfo.getComponentType())
+                .metricValue(memoryValue)
+                .metricUnit(metric.getValue())
+                .status(healthCheckStatus)
+                .time(new Date())
+                .output(message) // Print if there are any errors
+                .build();
+    }
+
+    private Double getFreeMemoryValue(MetricTolerance metricTolerance,
                                       MemoryHealthCheckModel memoryHealthCheckModel) {
-        assertValidMemoryMetric(metric);
-        if (metric == Metric.BYTES) {
+        if (metricTolerance.getMetric() == Metric.BYTES) {
             return Double.valueOf(memoryHealthCheckModel.getFreeMemory());
         }
 
         return memoryHealthCheckModel.getFreeMemoryPercentage();
     }
 
-    private Double getUtilizedMemoryValue(Metric metric,
+    private Double getUtilizedMemoryValue(MetricTolerance metricTolerance,
                                           MemoryHealthCheckModel memoryHealthCheckModel) {
-        assertValidMemoryMetric(metric);
-        if (metric == Metric.BYTES) {
+        if (metricTolerance.getMetric() == Metric.BYTES) {
             return Double.valueOf(memoryHealthCheckModel.getUtilizedMemory());
         }
 
         return memoryHealthCheckModel.getUtilizedMemoryPercentage();
     }
 
-    private Double getTotalMemoryValue(Metric metric,
+    private Double getTotalMemoryValue(MetricTolerance metricTolerance,
                                        MemoryHealthCheckModel memoryHealthCheckModel) {
-        assertValidMemoryMetric(metric);
-        if (metric == Metric.BYTES) {
+        if (metricTolerance.getMetric() == Metric.BYTES) {
             return Double.valueOf(memoryHealthCheckModel.getTotalMemory());
         }
 
         return 100.0;
-    }
-
-    private void assertValidMemoryMetric(Metric metric) {
-        if (!isValidMemoryMetric(metric)) {
-            throw new IllegalArgumentException("Invalid Memory Parameter");
-        }
-    }
-
-    private boolean isValidMemoryMetric(Metric metric) {
-        return metric == Metric.BYTES ||
-                metric == Metric.PERCENTAGE;
-    }
-
-    private HealthCheckStatusEnum getStatus(Metric metric, Double value) {
-        HealthCheckTolerance healthCheckTolerance = getHealthCheckTolerance(metric);
-        return healthCheckTolerance.getHealthCheckStatus(value);
-    }
-
-    private HealthCheckTolerance getHealthCheckTolerance(Metric metric) {
-        return metricTolerance.getMetricTolerance(metric);
     }
 }
